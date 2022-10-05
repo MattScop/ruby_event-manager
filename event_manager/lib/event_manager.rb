@@ -19,6 +19,7 @@ puts 'Event Manager Initialized!'
 # INCLUDE GOOGLE CIVIC API
     require 'csv'
     require 'google/apis/civicinfo_v2'
+    require 'erb'
 
     def clean_zip_codes(zip_code)
         # if the zip code is missing, then add 00000
@@ -37,20 +38,30 @@ puts 'Event Manager Initialized!'
                 address: zip_code,
                 levels: 'country',
                 roles: ['legislatorUpperBody', 'legislatorLowerBody']
-            )
-            legislators = legislators.officials
-            legislators_names = legislators.map(&:name)
-            legislators_names.join(', ')
+            ).officials
         rescue
             'You can find your representatives by visiting www.commoncause.org/take-action/find-elected-officials'
         end
     end
+
+    def save_thank_you_letter(id,form_letter)
+        Dir.mkdir 'output' unless Dir.exist?('output')
+        filename = "output/thanks_#{id}.html"
+        File.open(filename, 'w') do |file|
+            file.puts form_letter
+        end
+    end
+    
+    # INCLUDE FORM LETTER & SAVE IT
+    template_letter = File.read('../form_letter.erb')
+    erb_template = ERB.new template_letter
     
     contents = CSV.open('../event_attendees.csv', headers: true, header_converters: :symbol)
     contents.each do |line|
+        id = line[0]
         name = line[:first_name]
         zip_code = clean_zip_codes(line[:zipcode])
         legislators = legislators_by_zip_code(zip_code)
-        puts "#{name} #{zip_code} #{legislators}"
+        form_letter = erb_template.result(binding)
+        save_thank_you_letter(id,form_letter)
     end
-
