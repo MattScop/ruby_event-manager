@@ -16,7 +16,9 @@ puts 'Event Manager Initialized!'
     #     puts names
     # end
 # SWITCHING TO CSV LIBRARY
+# INCLUDE GOOGLE CIVIC API
     require 'csv'
+    require 'google/apis/civicinfo_v2'
 
     def clean_zip_codes(zip_code)
         # if the zip code is missing, then add 00000
@@ -26,10 +28,29 @@ puts 'Event Manager Initialized!'
         zip_code.to_s.rjust(5, '0')[0..4]
     end
     
+    def legislators_by_zip_code(zip_code)
+        civic_info = Google::Apis::CivicinfoV2::CivicInfoService.new
+        civic_info.key = 'AIzaSyClRzDqDh5MsXwnCWi0kOiiBivP6JsSyBw'
+
+        begin
+            legislators = civic_info.representative_info_by_address(
+                address: zip_code,
+                levels: 'country',
+                roles: ['legislatorUpperBody', 'legislatorLowerBody']
+            )
+            legislators = legislators.officials
+            legislators_names = legislators.map(&:name)
+            legislators_names.join(', ')
+        rescue
+            'You can find your representatives by visiting www.commoncause.org/take-action/find-elected-officials'
+        end
+    end
+    
     contents = CSV.open('../event_attendees.csv', headers: true, header_converters: :symbol)
     contents.each do |line|
         name = line[:first_name]
         zip_code = clean_zip_codes(line[:zipcode])
-        puts "#{name} #{zip_code}"
+        legislators = legislators_by_zip_code(zip_code)
+        puts "#{name} #{zip_code} #{legislators}"
     end
-    
+
