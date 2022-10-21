@@ -40,17 +40,17 @@ puts 'Event Manager Initialized!'
         phone_number_digits = phone_number_split.select { |item| item.match(/\d/) }
         phone_number_length = phone_number_digits.length
         case true
-            when !phone_number_length.between?(10, 11) then puts 'Phone number is not correct'
+            when !phone_number_length.between?(10, 11) then 'Phone number is not correct'
             when phone_number_length == 11
                 if phone_number_digits[0] == '1'
                     index = phone_number_split.index('1')
                     phone_number_split.delete_at(index)
-                    puts phone_number_split.join
+                    phone_number_split.join
                 else
-                    puts 'Phone number is not correct'
+                    'Phone number is not correct'
                 end
             else
-                puts phone_number
+                phone_number
         end
     end
     
