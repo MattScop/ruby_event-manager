@@ -17,6 +17,7 @@ puts 'Event Manager Initialized!'
     # end
 # SWITCHING TO CSV LIBRARY
 # INCLUDE GOOGLE CIVIC API
+# INCLUDE FORM LETTER & SAVE IT
     require 'csv'
     require 'google/apis/civicinfo_v2'
     require 'erb'
@@ -27,6 +28,30 @@ puts 'Event Manager Initialized!'
         # if the zip code is less than five digits, add zeros to the front until it becomes five digits
         # if the zip code is exactly five digits, assume that it is ok
         zip_code.to_s.rjust(5, '0')[0..4]
+    end
+
+    def clean_phone_numbers(phone_number)
+        # If the phone number is less than 10 digits, assume that it is a bad number
+        # If the phone number is 10 digits, assume that it is good
+        # If the phone number is 11 digits and the first number is 1, trim the 1 and use the remaining 10 digits
+        # If the phone number is 11 digits and the first number is not 1, then it is a bad number
+        # If the phone number is more than 11 digits, assume that it is a bad number
+        phone_number_split = phone_number.split('')
+        phone_number_digits = phone_number_split.select { |item| item.match(/\d/) }
+        phone_number_length = phone_number_digits.length
+        case true
+            when !phone_number_length.between?(10, 11) then puts 'Phone number is not correct'
+            when phone_number_length == 11
+                if phone_number_digits[0] == '1'
+                    index = phone_number_split.index('1')
+                    phone_number_split.delete_at(index)
+                    puts phone_number_split.join
+                else
+                    puts 'Phone number is not correct'
+                end
+            else
+                puts phone_number
+        end
     end
     
     def legislators_by_zip_code(zip_code)
@@ -52,7 +77,6 @@ puts 'Event Manager Initialized!'
         end
     end
     
-    # INCLUDE FORM LETTER & SAVE IT
     template_letter = File.read('../form_letter.erb')
     erb_template = ERB.new template_letter
     
@@ -61,7 +85,9 @@ puts 'Event Manager Initialized!'
         id = line[0]
         name = line[:first_name]
         zip_code = clean_zip_codes(line[:zipcode])
+        phone_number = clean_phone_numbers(line[:homephone])
         legislators = legislators_by_zip_code(zip_code)
         form_letter = erb_template.result(binding)
-        save_thank_you_letter(id,form_letter)
+        # save_thank_you_letter(id, form_letter)
     end
+    
