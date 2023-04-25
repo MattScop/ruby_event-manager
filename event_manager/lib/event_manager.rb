@@ -40,17 +40,17 @@ puts 'Event Manager Initialized!'
         phone_number_digits = phone_number_split.select { |item| item.match(/\d/) }
         phone_number_length = phone_number_digits.length
         case true
-            when !phone_number_length.between?(10, 11) then 'Phone number is not correct'
-            when phone_number_length == 11
-                if phone_number_digits[0] == '1'
-                    index = phone_number_split.index('1')
-                    phone_number_split.delete_at(index)
-                    phone_number_split.join
-                else
-                    'Phone number is not correct'
-                end
+        when !phone_number_length.between?(10, 11) then 'Phone number is not correct'
+        when phone_number_length == 11
+            if phone_number_digits[0] == '1'
+                index = phone_number_split.index('1')
+                phone_number_split.delete_at(index)
+                phone_number_split.join
             else
-                phone_number
+                'Phone number is not correct'
+            end
+        else
+            phone_number
         end
     end
     
@@ -81,13 +81,25 @@ puts 'Event Manager Initialized!'
     erb_template = ERB.new template_letter
     
     contents = CSV.open('../event_attendees.csv', headers: true, header_converters: :symbol)
+    registration_hours = [] #collect registration hours
     contents.each do |line|
         id = line[0]
         name = line[:first_name]
         zip_code = clean_zip_codes(line[:zipcode])
         phone_number = clean_phone_numbers(line[:homephone])
         legislators = legislators_by_zip_code(zip_code)
-        form_letter = erb_template.result(binding)
+        registration_hours << Time.strptime(line[:regdate], "%m/%d/%Y %k:%M").hour
+
+        ###########################################
+        # form_letter = erb_template.result(binding)
         # save_thank_you_letter(id, form_letter)
     end
+
+    peak_hours = registration_hours.reduce({}) do |obj, current|
+        obj["Registered at #{current}"] = 1 unless obj["Registered at #{current}"]
+        obj["Registered at #{current}"] += 1
+        obj
+    end
+    
+    pp peak_hours.sort_by{ |_key, value| value }.reverse.to_h
     
