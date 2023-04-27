@@ -81,7 +81,8 @@ puts 'Event Manager Initialized!'
     erb_template = ERB.new template_letter
     
     contents = CSV.open('../event_attendees.csv', headers: true, header_converters: :symbol)
-    registration_hours = [] #collect registration hours
+    registration_hours = [] #collect hours of registration
+    registration_days = [] #collect days of registration
     contents.each do |line|
         id = line[0]
         name = line[:first_name]
@@ -89,6 +90,11 @@ puts 'Event Manager Initialized!'
         phone_number = clean_phone_numbers(line[:homephone])
         legislators = legislators_by_zip_code(zip_code)
         registration_hours << Time.strptime(line[:regdate], "%m/%d/%Y %k:%M").hour
+        date = line[:regdate].split(' ').shift.split('/')
+        date[2].prepend('20')
+        what_day = Date.new(date[2].to_i, date[0].to_i, date[1].to_i).wday
+        time = Time.new(what_day)
+        registration_days << time.strftime('%A')
 
         ###########################################
         # form_letter = erb_template.result(binding)
@@ -100,6 +106,13 @@ puts 'Event Manager Initialized!'
         obj["Registered at #{current}"] += 1
         obj
     end
-    
     pp peak_hours.sort_by{ |_key, value| value }.reverse.to_h
-    
+
+    puts "\n"
+
+    peak_days = registration_days.reduce({}) do |obj, current|
+        obj["Registered on #{current}"] = 1 unless obj["Registered on #{current}"]
+        obj["Registered on #{current}"] += 1
+        obj
+    end
+    pp peak_days.sort_by{ |_key, value| value }.reverse.to_h
